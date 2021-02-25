@@ -8,6 +8,37 @@ struct BinRange
     int _max;
 };
 
+alias myComp = (x, y) => x._min < y._min;
+BinRange[] overlapRange(BinRange[] _ranges)
+{
+    _ranges.sort!(myComp);
+    BinRange prev;
+    int f = 1;
+    ulong i = 0;
+    ulong len = _ranges.length;
+    for (ulong idx = 0; idx < len; idx++)
+    {
+        if (f)
+        {
+            f = 0;
+            prev = _ranges[i];
+            i++;
+            continue;
+        }
+        if (_ranges[i]._min < prev._max)
+        {
+            _ranges[i - 1]._max = max(prev._max, _ranges[i]._max);
+            _ranges = _ranges.remove(i);
+            prev = _ranges[i - 1];
+        }
+        else
+        {
+            prev = _ranges[i];
+            i++;
+        }
+    }
+    return _ranges;
+}
 
 struct Bin
 {
@@ -20,8 +51,6 @@ struct Bin
         _name = name;
         _hits = 0;
     }
-    alias myComp = ( x, y)=> x._min < y._min;
-  
 
     void addRange(int val)
     {
@@ -42,104 +71,126 @@ struct Bin
         }
     }
 
-    void sortRanges()
+    bool checkAvailabilty(int val)
     {
-        _ranges.sort!(myComp);
-        writeln(_ranges,'\n');
-    }
-    
-    void overlapRange()
-    {
-        sortRanges();
-        BinRange prev;
-        int f = 1;
-        int idx = 0;
-        foreach(range ; _ranges)
+        ulong len = _ranges.length;
+        if (val < _ranges[0]._min)
+            return false;
+        if (val > _ranges[len - 1]._max)
+            return false;
+        ulong left = 0, right = len - 1;
+        while (left <= right)
         {
-            if(f)
-            {
-                f = 0;
-                prev = range;
-                idx++;
-                continue;
-            }
-            if(range._min < prev._max)
-            {
-                _ranges[idx-1]._max = max(prev._max,range._max);
-                _ranges = _ranges.remove(idx);
-                prev = _ranges[idx-1];
-            }
-            else
-            {
-                prev = range;
-                idx++;
-            }
+            ulong mid = left + (right - left) / 2;
+            if (val >= _ranges[mid]._min && val <= _ranges[mid]._max)
+                return true;
+            if (val < _ranges[mid]._min)
+                right = mid - 1;
+            else if (val > _ranges[mid]._max)
+                left = mid + 1;
         }
-        writeln("After Merging \n");
-        writeln(_ranges);
+        return false;
+    }
+};
+class CoverPoint(T)
+{
+    T* point;
+    Bin[] _bins;
+
+    this(T* adr)
+    {
+        point = adr;
     }
 
+    void addBin(BinRange[] range)
+    {
+        Bin objA = Bin("binA");
+        range = overlapRange(range);
+        ulong len = range.length;
+        for (ulong i = 0; i < len; i++)
+        {
+            objA.addRange(range[i]._min, range[i]._max);
+        }
+        _bins ~= objA;
+    }
+
+    void addBinArray(BinRange[] range)
+    {
+
+        range = overlapRange(range);
+        ulong len = range.length;
+        string BinPrefixName = "binB";
+        char suffix = 'a';
+        for (int i = 0; i < len; i++)
+        {
+            int start = range[i]._min;
+            int end = range[i]._max;
+
+            for (int j = start; j <= end; j++)
+            {
+                Bin obj = Bin(BinPrefixName ~ suffix);
+                obj.addRange(j);
+                _bins ~= obj;
+            }
+        }
+    }
+
+    void getBins()
+    {
+        foreach (bin; _bins)
+        {
+            foreach (range; bin._ranges)
+                writeln(range._min, " ", range._max);
+            writeln("Another Bin");
+        }
+    }
+
+    void setHit()
+    {
+        T temp = *(point);
+        ulong binLength = _bins.length;
+        for (ulong i = 0; i < binLength; i++)
+        {
+            if (_bins[i].checkAvailabilty(temp))
+            {
+                _bins[i]._hits++;
+                break;
+            }
+        }
+    }
+
+    void getPercentageOfHits()
+    {
+        float hitted = 0f, total = 0f;
+        foreach (bin; _bins)
+        {
+            if (bin._hits)
+                hitted++;
+            total++;
+        }
+        float percentage = ((hitted) * 100.0) / (total);
+        writeln("Percentage of bins hitted are ", percentage);
+    }
 };
 void main()
 {
-    Bin[] _bins;
-    Bin objA = Bin("binA");
-    objA.addRange(0, 63);
-    objA.addRange(65);
-    objA.overlapRange();
-    _bins ~= objA;
+    int a;
+    auto temp = new CoverPoint!(int)(&a);
+    BinRange range1 = BinRange(0, 63), range2 = BinRange(65, 65);
+    temp.addBin([range1, range2]);
+    BinRange[] array;
+    range1 = BinRange(127, 130), range2 = BinRange(128, 132);
+    array ~= range1;
+    array ~= range2;
+    temp.addBinArray(array);
+    a = 5;
+    temp.setHit();
+    a = 130;
+    temp.setHit();
+    a = 131;
+    temp.setHit();
+    a = 132;
+    temp.setHit();
     
-    Bin objB = Bin("binB");
-    objB.addRange(127,130);
-    objB.addRange(128,132);
-    objB.overlapRange();
-    BinRange ranges = objB._ranges;
-    ulong len = ranges.length;
-    string BinPrefixName = "binB";
-    char suffix = 'a';
-    for(int i = 0;i<len;i++)
-    {
-        int start = ranges[i]._min;
-        int end = ranges[i]._max;
-        
-        for(int j = start ; j<=end ; j++)
-        {
-            Bin obj = Bin(BinPrefixName ~ suffix);
-            obj.addRange(start);
-            _bins ~= obj
-        }
-    }
-    
-    Bin objC = Bin("binC");
-    objC.addRange(200,202);
-    objC.overlapRange();
-    BinRange ranges = objC._ranges;
-    ulong len = ranges.length;
-    string BinPrefixName = "binC";
-    char suffix = 'a';
-    for(int i = 0;i<len;i++)
-    {
-        int start = ranges[i]._min;
-        int end = ranges[i]._max;
-        
-        for(int j = start ; j<=end ; j++)
-        {
-            Bin obj = Bin(BinPrefixName ~ suffix);
-            obj.addRange(start);
-            _bins ~= obj
-        }
-    }
-    
-
-
-    
-  /*  Bin b = Bin("A");
-    b.addRange(1,4);
-    b.addRange(13,20);
-    b.addRange(2,14);
-    writeln(b._ranges,"\n");
-    b.overlapRange();
-    */
-    
-
+    temp.getPercentageOfHits();
 }

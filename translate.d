@@ -425,8 +425,12 @@ class CoverPoint(T,string bins = "")
                     obj.addRange(_min,_max);
                     i++;
                     temp -= (_max - _min + 1);
-                    _min = range[i]._min;
-                    _max = range[i]._max;
+                    if(i < len )
+                    {
+                        _min = range[i]._min;
+                        _max = range[i]._max;
+                    }
+                    
                     continue;
                 }
                 else if(temp == (_max - _min + 1))
@@ -468,8 +472,11 @@ class CoverPoint(T,string bins = "")
                     obj.addRange(_min,_max);
                     i++;
                     temp -= (_max - _min + 1);
-                    _min = range[i]._min;
-                    _max = range[i]._max;
+                    if(i <len)
+                    {
+                        _min = range[i]._min;
+                        _max = range[i]._max;
+                    }
                     continue;
                 }
                 else if(temp == (_max - _min + 1))
@@ -487,7 +494,7 @@ class CoverPoint(T,string bins = "")
                 }
                 else
                 {
-                    obj.addRange(_min,_max);
+                    obj.addRange(_min,_min + temp - 1);
                     _bins ~= obj;
                     _min = _min + temp;
                     temp = 0;

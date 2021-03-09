@@ -444,7 +444,7 @@ class CoverPoint(T,string bins = "")
                 }
                 else
                 {
-                    obj.addRange(_min,_max);
+                    obj.addRange(_min,_min + temp - 1);
                     _bins ~= obj;
                     _min = _min + temp;
                     temp = 0;

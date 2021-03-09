@@ -58,9 +58,9 @@ struct Bin
         _ranges ~= BinRange(val, val);
     }
 
-    void addRange(int min, int max)
+    void addRange(int _min, int _max)
     {
-        _ranges ~= BinRange(min, max);
+        _ranges ~= BinRange(_min, _max);
     }
 
     void printRange()
@@ -208,8 +208,14 @@ class CoverPoint(T,string bins = "")
                     {
                         assert(bins[srcCursor] == ']' || bins[srcCursor] == '$',"Syntax Error, ']' is expected but not found");
                         if(bins[srcCursor] == '$')
-                        arr[turn] = 1024;
-                        srcCursor++; 
+                        {
+                            arr[turn] = 1024;
+                            srcCursor++; 
+                            parseWhiteSpace();
+                            assert(bins[srcCursor] == ']',"Syntax Error, ']' is expected but not found");
+                            
+                        }
+                        srcCursor++;
                         return ;
                     }
                 }
@@ -239,13 +245,13 @@ class CoverPoint(T,string bins = "")
             else
             {
                 parseWhiteSpace();
-                /*char c = bins[srcCursor];
+                char c = bins[srcCursor];
 
                 if(c != ',' && c != '}')
                 {
                     assert(false,"Syntax Error");
                 }
-                else*/
+                else
                 return n;
             }
         }
@@ -261,7 +267,8 @@ class CoverPoint(T,string bins = "")
     void parseSemiColon()
     {
         assert(srcCursor < bins.length, "Syntax Error");
-        assert(bins[srcCursor] == ';'," ';'  is expected but not found");
+        assert(bins[srcCursor] == ';' || bins[srcCursor] == '}'," ';'  is expected but not found");
+        if(bins[srcCursor] == ';')
         srcCursor++;
         parseWhiteSpace();
     }
@@ -359,10 +366,14 @@ class CoverPoint(T,string bins = "")
         
                 parseSemiColon();
                 assert(srcCursor < bins.length, "Syntax Error");
-                if(bins[srcCursor] == '}')
-                break;
-
                 addBin(_ranges,binName,arraySize);
+                if(bins[srcCursor] == '}')
+                {
+                    
+                    break;
+                }
+
+                
             }
             assert(srcCursor < bins.length,"Syntax Error");
         }
@@ -387,6 +398,7 @@ class CoverPoint(T,string bins = "")
         if(arraySize == 0)
             arraySize = total;
         int frontBins = 0, frontBinsSize = 0, backBins = 0, backBinsSize = 0;
+        //assert(arraySize <= total,"Invalid array size" );
         if(arraySize > total)
         {
             frontBins = total;
@@ -394,6 +406,7 @@ class CoverPoint(T,string bins = "")
             backBins = arraySize - total;
             backBinsSize = 0;
         }
+    
         else
         {
             frontBinsSize = total/arraySize;
@@ -425,12 +438,8 @@ class CoverPoint(T,string bins = "")
                     obj.addRange(_min,_max);
                     i++;
                     temp -= (_max - _min + 1);
-                    if(i < len )
-                    {
-                        _min = range[i]._min;
-                        _max = range[i]._max;
-                    }
-                    
+                    _min = range[i]._min;
+                    _max = range[i]._max;
                     continue;
                 }
                 else if(temp == (_max - _min + 1))
@@ -439,7 +448,7 @@ class CoverPoint(T,string bins = "")
                     _bins ~= obj;
                     i++;
                     frontBins--;
-                    if(i <len)
+                    if(i < len)
                     {
                         _min = range[i]._min;
                         _max = range[i]._max;
@@ -534,10 +543,37 @@ class CoverPoint(T,string bins = "")
 void main()
 {
     int a;
-    auto temp = new CoverPoint!(int,"{bins a = { [0:63],65 }; bins b[] = { [127:130],[128:132] };bins c[] = { 200,201,202 };bins d = { [1000:$] };}")(&a);
+    auto temp = new CoverPoint!(int,"{bins a = { [0:63],65 }; bins b[] = { [127:130],[128:132] } ;bins c[] = { 200,201,202 } ;bins d = { [1023:$] } }")(&a);
     a = 5;
     temp.setHit();
+    a = 127;
+    temp.setHit();
+    a = 128;
+    temp.setHit();
+    a = 129;
+    
+    temp.setHit();
+    a = 130;
+    temp.setHit();
+    a = 131;
+    temp.setHit();
+    a = 132;
+    temp.setHit();
+    
+    a = 200;
+    temp.setHit();
+    a = 201;
+    temp.setHit();
+    a = 202;
+    temp.setHit();
+    
+    a = 1023;
+    temp.setHit();
+    a = 1024;
+    temp.setHit();
+    
     temp.getPercentageOfHits();
+    //temp.getBins();
     /*BinRange range1 = BinRange(0, 63), range2 = BinRange(65, 65);
     temp.addBin([range1, range2]);
     BinRange[] array;
